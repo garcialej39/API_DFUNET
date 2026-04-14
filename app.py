@@ -77,11 +77,11 @@ def predict():
         pred_idx = int(np.argmax(probs))
 
         if pred_idx == 1:
-            pred_label = "Ulcera"
-            recomendacion = "Recomendacion: consulta con el medico"
+            pred_label = "Úlcera detectada"
+            recomendacion = "Consulta con el médico"
         else:
-            pred_label = "No ulcera"
-            recomendacion = "Recomendacion: seguimiento rutinario"
+            pred_label = "No se detecta úlcera"
+            recomendacion = "Seguimiento rutinario"
 
         return jsonify({
             "prediccion": pred_label,
