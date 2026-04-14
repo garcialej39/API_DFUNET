@@ -62,7 +62,6 @@ def predict():
 
         image_b64 = data["image_base64"]
 
-        # Por si viene como data:image/jpeg;base64,...
         if "," in image_b64:
             image_b64 = image_b64.split(",")[1]
 
@@ -76,21 +75,17 @@ def predict():
             probs = torch.softmax(logits, dim=1)[0].cpu().numpy()
 
         pred_idx = int(np.argmax(probs))
-        pred_class_raw = IDX_TO_CLASS[pred_idx]
-        confidence = float(probs[pred_idx])
-        prob_ulcera = float(probs[1])
 
-        # Etiquetas limpias para la app
         if pred_idx == 1:
             pred_label = "ulcera"
+            recomendacion = "consulta con el medico"
         else:
             pred_label = "no_ulcera"
+            recomendacion = "seguimiento rutinario"
 
         return jsonify({
             "prediccion": pred_label,
-            "confianza": round(confidence, 4),
-            "prob_ulcera": round(prob_ulcera, 4),
-            "clase_original": pred_class_raw
+            "recomendacion": recomendacion
         })
 
     except Exception as e:
