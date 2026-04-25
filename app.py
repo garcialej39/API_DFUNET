@@ -57,17 +57,14 @@ def predict():
     try:
         image = None
 
-        # Caso 1: Postman form-data con key "file"
         if "file" in request.files:
             file = request.files["file"]
             image = Image.open(file.stream).convert("RGB")
 
-        # Caso 2: App Inventor PostFile / binary
         elif request.get_data():
             image_bytes = request.get_data()
             image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
-        # Caso 3: JSON base64
         elif request.is_json:
             data = request.get_json()
             if data and "image_base64" in data:
@@ -79,6 +76,31 @@ def predict():
 
         if image is None:
             return jsonify({"error": "No se recibio ninguna imagen"}), 400
+
+        x = preprocess_image(image).to(device)
+
+        with torch.no_grad():
+            logits = model(x)
+            probs = torch.softmax(logits, dim=1)[0].cpu().numpy()
+
+        pred_idx = int(np.argmax(probs))
+
+        if pred_idx == 1:
+            pred_label = "Ulcera"
+            recomendacion = "Recomendacion: consulta con el medico"
+        else:
+            pred_label = "No ulcera"
+            recomendacion = "Recomendacion: seguimiento rutinario"
+
+        return jsonify({
+            "prediccion": pred_label,
+            "recomendacion": recomendacion
+        })
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
 if __name__ == "__main__":
