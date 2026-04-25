@@ -12,6 +12,7 @@ app = Flask(__name__)
 CORS(app)
 
 device = torch.device("cpu")
+torch.set_num_threads(1)
 
 # Cargar checkpoint
 checkpoint = torch.load("dfunet_final.pth", map_location=device)
@@ -31,7 +32,7 @@ model.eval()
 
 def preprocess_image(image_pil):
     image = image_pil.convert("RGB")
-    image = image.resize((IMG_SIZE, IMG_SIZE))
+    image = image.resize((128, 128))
 
     image_np = np.array(image).astype(np.float32) / 255.0
 
