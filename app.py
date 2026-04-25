@@ -55,18 +55,28 @@ def home():
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        data = request.get_json()
+        image = None
 
-        if not data or "image_base64" not in data:
-            return jsonify({"error": "Falta el campo image_base64"}), 400
+        # CASO 1: si llega como JSON base64
+        if request.is_json:
+            data = request.get_json()
+            if data and "image_base64" in data:
+                image_b64 = data["image_base64"]
 
-        image_b64 = data["image_base64"]
+                if "," in image_b64:
+                    image_b64 = image_b64.split(",")[1]
 
-        if "," in image_b64:
-            image_b64 = image_b64.split(",")[1]
+                image_bytes = base64.b64decode(image_b64)
+                image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
-        image_bytes = base64.b64decode(image_b64)
-        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        # CASO 2: si llega como archivo directo desde App Inventor
+        if image is None:
+            image_bytes = request.get_data()
+
+            if not image_bytes:
+                return jsonify({"error": "No se recibio ninguna imagen"}), 400
+
+            image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
         x = preprocess_image(image).to(device)
 
@@ -77,11 +87,11 @@ def predict():
         pred_idx = int(np.argmax(probs))
 
         if pred_idx == 1:
-            pred_label = "Úlcera detectada"
-            recomendacion = "Consulta con el médico"
+            pred_label = "Ulcera"
+            recomendacion = "Recomendacion: consulta con el medico"
         else:
-            pred_label = "No se detecta úlcera"
-            recomendacion = "Seguimiento rutinario"
+            pred_label = "No ulcera"
+            recomendacion = "Recomendacion: seguimiento rutinario"
 
         return jsonify({
             "prediccion": pred_label,
