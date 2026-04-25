@@ -57,51 +57,28 @@ def predict():
     try:
         image = None
 
-        # CASO 1: si llega como JSON base64
-        if request.is_json:
+        # Caso 1: Postman form-data con key "file"
+        if "file" in request.files:
+            file = request.files["file"]
+            image = Image.open(file.stream).convert("RGB")
+
+        # Caso 2: App Inventor PostFile / binary
+        elif request.get_data():
+            image_bytes = request.get_data()
+            image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+
+        # Caso 3: JSON base64
+        elif request.is_json:
             data = request.get_json()
             if data and "image_base64" in data:
                 image_b64 = data["image_base64"]
-
                 if "," in image_b64:
                     image_b64 = image_b64.split(",")[1]
-
                 image_bytes = base64.b64decode(image_b64)
                 image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
-        # CASO 2: si llega como archivo directo desde App Inventor
         if image is None:
-            image_bytes = request.get_data()
-
-            if not image_bytes:
-                return jsonify({"error": "No se recibio ninguna imagen"}), 400
-
-            image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-
-        x = preprocess_image(image).to(device)
-
-        with torch.no_grad():
-            logits = model(x)
-            probs = torch.softmax(logits, dim=1)[0].cpu().numpy()
-
-        pred_idx = int(np.argmax(probs))
-
-        if pred_idx == 1:
-            pred_label = "Ulcera"
-            recomendacion = "Recomendacion: consulta con el medico"
-        else:
-            pred_label = "No ulcera"
-            recomendacion = "Recomendacion: seguimiento rutinario"
-
-        return jsonify({
-            "prediccion": pred_label,
-            "recomendacion": recomendacion
-        })
-
-    except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 500
+            return jsonify({"error": "No se recibio ninguna imagen"}), 400
 
 
 if __name__ == "__main__":
