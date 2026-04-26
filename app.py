@@ -67,29 +67,25 @@ def predict():
     try:
         image = None
 
-        if "file" in request.files:
-            file = request.files["file"]
+        # --- CAMBIO AQUÍ: Buscar cualquier archivo en lugar de uno llamado 'file' ---
+        if request.files:
+            # Toma el primer archivo que encuentre en la petición
+            file = next(iter(request.files.values()))
             image = Image.open(file.stream).convert("RGB")
 
-            # Reducir tamaño si es muy grande
-            if image.width > 1024 or image.height > 1024:
-                image.thumbnail((1024, 1024))
-
+        # --- Mantén el resto de tu lógica igual ---
         elif request.get_data():
             image_bytes = request.get_data()
             image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
         elif request.is_json:
-            data = request.get_json()
-            if data and "image_base64" in data:
-                image_b64 = data["image_base64"]
-                if "," in image_b64:
-                    image_b64 = image_b64.split(",")[1]
-                image_bytes = base64.b64decode(image_b64)
-                image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-
+            # ... tu lógica actual para JSON ...
+            pass
+            
         if image is None:
-            return jsonify({"error": "No se recibio ninguna imagen"}), 400
+            return jsonify({"error": "No se recibió ninguna imagen"}), 400
+            
+        # ... resto de tu código de predicción ...
 
         x = preprocess_image(image).to(device)
 
