@@ -10,7 +10,7 @@ from modelo import DFUNet
 
 app = Flask(__name__)
 CORS(app)
-app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
 
 device = torch.device("cpu")
 torch.set_num_threads(1)
@@ -33,6 +33,14 @@ model.eval()
 
 def preprocess_image(image_pil):
     image = image_pil.convert("RGB")
+
+    # Comprimir antes de procesar
+    buffer = io.BytesIO()
+    image.save(buffer, format="JPEG", quality=50)
+    buffer.seek(0)
+    image = Image.open(buffer)
+
+
     image = image.resize((128, 128))
 
     image_np = np.array(image).astype(np.float32) / 255.0
@@ -62,6 +70,10 @@ def predict():
         if "file" in request.files:
             file = request.files["file"]
             image = Image.open(file.stream).convert("RGB")
+
+            # Reducir tamaño si es muy grande
+            if image.width > 1024 or image.height > 1024:
+                image.thumbnail((1024, 1024))
 
         elif request.get_data():
             image_bytes = request.get_data()
