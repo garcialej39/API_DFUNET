@@ -10,6 +10,7 @@ from modelo import DFUNet
 
 app = Flask(__name__)
 CORS(app)
+app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
 device = torch.device("cpu")
 torch.set_num_threads(1)
